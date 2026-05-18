@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "GDriveViewer",
+  "mainBinaryName": "GDriveViewer",
+  "version": "0.1.0",
+  "identifier": "top.volan.gdrive-viewer",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "谷歌云盘查看器 v0.1.0",
+        "width": 1400,
+        "height": 900
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "app", "dmg"],
+    "windows": {
+      "wix": {
+        "language": "zh-CN"
+      }
+    },
+    "publisher": "Julian F.",
+    "license": "Licensed under the MIT License.",
+    "shortDescription": "Google Drive 文件查看器。",
+    "longDescription": "GDriveViewer 是一个 Google Drive 文件查看器，支持分栏浏览云盘文件，并可扫描指定目录下的 Google 文档是否包含图片。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
