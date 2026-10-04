@@ -33,15 +33,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 11
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -67,8 +69,13 @@ jobs:
 
       - name: Archive built app
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          $archivePath = Join-Path $PWD "release-artifacts/GDriveViewer-${{ github.ref_name }}-${{ matrix.archive_suffix }}.7z"
+          if ($env:RELEASE_TAG -notmatch '^v[0-9][0-9A-Za-z._-]*$') {
+            throw "Invalid release tag"
+          }
+          $archivePath = Join-Path $PWD "release-artifacts/GDriveViewer-$($env:RELEASE_TAG)-${{ matrix.archive_suffix }}.7z"
           $sourcePath = Join-Path $PWD "${{ matrix.built_app_path }}"
           $sourceDir = Split-Path -Path $sourcePath -Parent
           $sourceName = Split-Path -Path $sourcePath -Leaf
@@ -82,7 +89,7 @@ jobs:
           }
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.archive_suffix }}-release-assets
           path: |
@@ -99,17 +106,17 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
 
       - name: Attest release assets
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: artifacts/**/*
 
       - name: Create release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: artifacts/**/*
           generate_release_notes: true

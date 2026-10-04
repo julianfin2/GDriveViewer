@@ -6,15 +6,12 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, Mutex,
+        Mutex, MutexGuard,
     },
     time::Duration,
 };
 use tauri::{AppHandle, Emitter};
-use tokio::{
-    sync::{mpsc, Semaphore},
-    time::sleep,
-};
+use tokio::{task::JoinSet, time::sleep};
 
 const DRIVE_FOLDER_MIME: &str = "application/vnd.google-apps.folder";
 const GOOGLE_DOC_MIME: &str = "application/vnd.google-apps.document";
@@ -24,10 +21,45 @@ const DOC_SCAN_RETRIES: usize = 3;
 
 #[derive(Default)]
 struct AppState {
-    access_token: Mutex<Option<String>>,
-    scan_cache: Mutex<HashMap<String, CachedDocScan>>,
-    drive_cache: Mutex<HashMap<String, Vec<DriveFile>>>,
+    session: Mutex<AuthSession>,
     scan_generation: AtomicU64,
+}
+
+#[derive(Default)]
+struct AuthSession {
+    access_token: Option<String>,
+    generation: u64,
+    scan_cache: HashMap<String, CachedDocScan>,
+    drive_cache: HashMap<String, Vec<DriveFile>>,
+}
+
+impl AppState {
+    fn replace_token(&self, token: Option<String>) -> Result<AuthState, String> {
+        let mut session = self
+            .session
+            .lock()
+            .map_err(|_| "Failed to update auth state.")?;
+        session.generation += 1;
+        session.access_token = token;
+        session.scan_cache.clear();
+        session.drive_cache.clear();
+        self.scan_generation.fetch_add(1, Ordering::SeqCst);
+        Ok(AuthState {
+            connected: session.access_token.is_some(),
+            generation: session.generation,
+        })
+    }
+
+    fn session_for(&self, generation: u64) -> Result<MutexGuard<'_, AuthSession>, String> {
+        let session = self
+            .session
+            .lock()
+            .map_err(|_| "Failed to read auth state.")?;
+        if session.generation != generation || session.access_token.is_none() {
+            return Err("Authentication session changed. Please reconnect.".into());
+        }
+        Ok(session)
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -58,6 +90,7 @@ struct DriveListResponse {
 #[serde(rename_all = "camelCase")]
 struct AuthState {
     connected: bool,
+    generation: u64,
 }
 
 #[derive(Serialize)]
@@ -87,6 +120,7 @@ struct ScanFailure {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ScanProgress {
+    auth_generation: u64,
     folder_id: String,
     total_files: usize,
     total_docs: usize,
@@ -99,6 +133,11 @@ struct ScanProgress {
     current_file_name: Option<String>,
     cancelled: bool,
     message: String,
+}
+
+struct ScanSession {
+    generation: u64,
+    auth_generation: u64,
 }
 
 #[derive(Clone)]
@@ -170,41 +209,27 @@ fn set_access_token(state: tauri::State<'_, AppState>, token: String) -> Result<
         return Err("Access token cannot be empty.".into());
     }
 
-    *state
-        .access_token
-        .lock()
-        .map_err(|_| "Failed to update auth state.")? = Some(cleaned);
-    Ok(AuthState { connected: true })
+    if cleaned.len() > 8192 || !cleaned.bytes().all(|byte| byte.is_ascii_graphic()) {
+        return Err("Invalid access token format.".into());
+    }
+    state.replace_token(Some(cleaned))
 }
 
 #[tauri::command]
 fn clear_access_token(state: tauri::State<'_, AppState>) -> Result<AuthState, String> {
-    *state
-        .access_token
-        .lock()
-        .map_err(|_| "Failed to update auth state.")? = None;
-    state
-        .scan_cache
-        .lock()
-        .map_err(|_| "Failed to clear scan cache.")?
-        .clear();
-    state
-        .drive_cache
-        .lock()
-        .map_err(|_| "Failed to clear Drive cache.")?
-        .clear();
-    state.scan_generation.fetch_add(1, Ordering::SeqCst);
-    Ok(AuthState { connected: false })
+    state.replace_token(None)
 }
 
 #[tauri::command]
 fn get_auth_state(state: tauri::State<'_, AppState>) -> Result<AuthState, String> {
-    let connected = state
-        .access_token
+    let session = state
+        .session
         .lock()
-        .map_err(|_| "Failed to read auth state.")?
-        .is_some();
-    Ok(AuthState { connected })
+        .map_err(|_| "Failed to read auth state.")?;
+    Ok(AuthState {
+        connected: session.access_token.is_some(),
+        generation: session.generation,
+    })
 }
 
 #[tauri::command]
@@ -212,14 +237,13 @@ async fn list_drive_files(
     state: tauri::State<'_, AppState>,
     parent_id: Option<String>,
 ) -> Result<DriveListResponse, String> {
-    let token = read_token(&state)?;
+    let (token, auth_generation) = read_token(&state)?;
     let parent = parent_id.unwrap_or_else(|| "root".to_string());
-    let client = Client::new();
-    let files = list_children(&client, &token, &parent).await?;
+    let client = google_client()?;
+    let files = list_children(&client, &token, &parent, &state, auth_generation).await?;
     state
+        .session_for(auth_generation)?
         .drive_cache
-        .lock()
-        .map_err(|_| "Failed to update Drive cache.")?
         .insert(parent.clone(), files.clone());
 
     Ok(DriveListResponse {
@@ -241,8 +265,8 @@ async fn scan_docs_for_images(
     recursive: bool,
     force: bool,
 ) -> Result<ScanResult, String> {
-    let token = read_token(&state)?;
-    let client = Client::new();
+    let (token, auth_generation) = read_token(&state)?;
+    let client = google_client()?;
     let scan_generation = state.scan_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let root = if folder_id.trim().is_empty() {
         "root".to_string()
@@ -252,6 +276,7 @@ async fn scan_docs_for_images(
     emit_scan_progress(
         &app,
         ScanProgress {
+            auth_generation,
             folder_id: root.clone(),
             total_files: 0,
             total_docs: 0,
@@ -274,7 +299,10 @@ async fn scan_docs_for_images(
         &state,
         &root,
         recursive,
-        scan_generation,
+        ScanSession {
+            generation: scan_generation,
+            auth_generation,
+        },
     )
     .await?;
     let docs: Vec<DriveFile> = all_files
@@ -290,10 +318,8 @@ async fn scan_docs_for_images(
     let mut checked_docs = 0;
 
     {
-        let cache = state
-            .scan_cache
-            .lock()
-            .map_err(|_| "Failed to read scan cache.")?;
+        let session = state.session_for(auth_generation)?;
+        let cache = &session.scan_cache;
 
         for doc in docs {
             let cached = cache.get(&doc.id);
@@ -312,6 +338,7 @@ async fn scan_docs_for_images(
                 emit_scan_progress(
                     &app,
                     ScanProgress {
+                        auth_generation,
                         folder_id: root.clone(),
                         total_files: all_files.len(),
                         total_docs,
@@ -332,36 +359,18 @@ async fn scan_docs_for_images(
         }
     }
 
-    let semaphore = Arc::new(Semaphore::new(DOC_SCAN_CONCURRENCY));
-    let (scan_tx, mut scan_rx) = mpsc::channel(to_scan.len().max(1));
-
-    for doc in to_scan {
-        let client = client.clone();
-        let token = token.clone();
-        let semaphore = semaphore.clone();
-        let doc_name = doc.name.clone();
-        let scan_tx = scan_tx.clone();
-
-        tauri::async_runtime::spawn(async move {
-            let _permit = semaphore
-                .acquire_owned()
-                .await
-                .map_err(|_| "Scan worker was closed.".to_string())?;
-            let result = document_has_images(&client, &token, &doc.id).await;
-            let _ = scan_tx.send(Ok::<_, String>((doc, doc_name, result))).await;
-            Ok::<_, String>(())
-        });
-    }
-    drop(scan_tx);
+    let mut pending = to_scan.into_iter();
+    let mut workers = JoinSet::new();
 
     let mut scanned_docs = 0;
     let mut failed_docs = 0;
     let mut failures = Vec::new();
-    while let Some(scan_message) = scan_rx.recv().await {
+    loop {
         if scan_cancelled(&state, scan_generation) {
             emit_scan_progress(
                 &app,
                 ScanProgress {
+                    auth_generation,
                     folder_id: root.clone(),
                     total_files: all_files.len(),
                     total_docs,
@@ -379,24 +388,46 @@ async fn scan_docs_for_images(
             break;
         }
 
-        let (mut doc, doc_name, scan_result) = scan_message?;
+        while workers.len() < DOC_SCAN_CONCURRENCY {
+            let Some(doc) = pending.next() else {
+                break;
+            };
+            let client = client.clone();
+            let token = token.clone();
+            workers.spawn(async move {
+                let result = document_has_images(&client, &token, &doc.id).await;
+                (doc, result)
+            });
+        }
+        if workers.is_empty() {
+            break;
+        }
+        let message = tokio::select! {
+            message = workers.join_next() => message,
+            _ = sleep(Duration::from_millis(100)) => continue,
+        };
+        let Some(message) = message else {
+            break;
+        };
+        let (mut doc, scan_result) = message.map_err(|_| "Scan worker failed.".to_string())?;
+        drop(state.session_for(auth_generation)?);
+        if scan_cancelled(&state, scan_generation) {
+            continue;
+        }
+        let doc_name = doc.name.clone();
         checked_docs += 1;
 
         match scan_result {
             Ok(has_images) => {
                 scanned_docs += 1;
 
-                state
-                    .scan_cache
-                    .lock()
-                    .map_err(|_| "Failed to update scan cache.")?
-                    .insert(
-                        doc.id.clone(),
-                        CachedDocScan {
-                            modified_time: doc.modified_time.clone(),
-                            has_images,
-                        },
-                    );
+                state.session_for(auth_generation)?.scan_cache.insert(
+                    doc.id.clone(),
+                    CachedDocScan {
+                        modified_time: doc.modified_time.clone(),
+                        has_images,
+                    },
+                );
 
                 doc.has_images = Some(has_images);
                 if has_images {
@@ -416,6 +447,7 @@ async fn scan_docs_for_images(
         emit_scan_progress(
             &app,
             ScanProgress {
+                auth_generation,
                 folder_id: root.clone(),
                 total_files: all_files.len(),
                 total_docs,
@@ -432,6 +464,8 @@ async fn scan_docs_for_images(
         );
     }
 
+    workers.abort_all();
+    drop(state.session_for(auth_generation)?);
     matches.sort_by(|left, right| {
         left.name
             .to_lowercase()
@@ -486,20 +520,48 @@ fn collect_matching_folder_ids(all_files: &[DriveFile], matches: &[DriveFile]) -
     folder_ids.into_iter().collect()
 }
 
-fn read_token(state: &tauri::State<'_, AppState>) -> Result<String, String> {
-    state
-        .access_token
+fn read_token(state: &AppState) -> Result<(String, u64), String> {
+    let session = state
+        .session
         .lock()
-        .map_err(|_| "Failed to read auth state.")?
+        .map_err(|_| "Failed to read auth state.")?;
+    let token = session
+        .access_token
         .clone()
-        .ok_or_else(|| "Google access token is not configured.".to_string())
+        .ok_or_else(|| "Google access token is not configured.".to_string())?;
+    Ok((token, session.generation))
+}
+
+fn google_client() -> Result<Client, String> {
+    Client::builder()
+        .https_only(true)
+        .redirect(reqwest::redirect::Policy::none())
+        .connect_timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|_| "Failed to initialize Google API client.".into())
+}
+
+fn validate_google_id(id: &str) -> Result<(), String> {
+    if id.is_empty()
+        || id.len() > 256
+        || !id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+    {
+        return Err("Invalid Google file ID.".into());
+    }
+    Ok(())
 }
 
 async fn list_children(
     client: &Client,
     token: &str,
     parent_id: &str,
+    state: &AppState,
+    auth_generation: u64,
 ) -> Result<Vec<DriveFile>, String> {
+    validate_google_id(parent_id)?;
     let query = format!("'{parent_id}' in parents and trashed = false");
     let encoded_query = utf8_percent_encode(&query, NON_ALPHANUMERIC).to_string();
     let fields = "nextPageToken,files(id,name,mimeType,modifiedTime,size,webViewLink,iconLink,owners(displayName,emailAddress),parents)";
@@ -508,6 +570,7 @@ async fn list_children(
     let mut files = Vec::new();
 
     loop {
+        drop(state.session_for(auth_generation)?);
         let mut url = format!(
             "https://www.googleapis.com/drive/v3/files?q={encoded_query}&pageSize={PAGE_SIZE}&fields={encoded_fields}&orderBy=folder,name_natural"
         );
@@ -521,7 +584,7 @@ async fn list_children(
             .bearer_auth(token)
             .send()
             .await
-            .map_err(|error| format!("Drive request failed: {error}"))?;
+            .map_err(|error| format!("Drive request failed: {}", error.without_url()))?;
 
         if !response.status().is_success() {
             return Err(format_google_error("Drive request", response).await);
@@ -549,19 +612,36 @@ async fn collect_files(
     state: &tauri::State<'_, AppState>,
     root: &str,
     recursive: bool,
-    scan_generation: u64,
+    session: ScanSession,
 ) -> Result<Vec<DriveFile>, String> {
+    let ScanSession {
+        generation: scan_generation,
+        auth_generation,
+    } = session;
     let mut collected = Vec::new();
     let mut queue = VecDeque::from([root.to_string()]);
+    let mut visited = HashSet::new();
     let mut scanned_folders = 0;
     let mut discovered_docs = 0;
 
     while let Some(folder_id) = queue.pop_front() {
+        if !visited.insert(folder_id.clone()) {
+            continue;
+        }
         if scan_cancelled(state, scan_generation) {
             return Ok(collected);
         }
 
-        let children = list_children_cached(client, token, state, &folder_id).await?;
+        let request = list_children_cached(client, token, state, &folder_id, auth_generation);
+        tokio::pin!(request);
+        let children = loop {
+            tokio::select! {
+                result = &mut request => break result?,
+                _ = sleep(Duration::from_millis(100)) => {
+                    if scan_cancelled(state, scan_generation) { return Ok(collected); }
+                }
+            }
+        };
         scanned_folders += 1;
         discovered_docs += children.iter().filter(|file| file.is_google_doc).count();
         if recursive {
@@ -577,6 +657,7 @@ async fn collect_files(
         emit_scan_progress(
             app,
             ScanProgress {
+                auth_generation,
                 folder_id: root.to_string(),
                 total_files: collected.len(),
                 total_docs: discovered_docs,
@@ -601,22 +682,21 @@ async fn list_children_cached(
     token: &str,
     state: &tauri::State<'_, AppState>,
     parent_id: &str,
+    auth_generation: u64,
 ) -> Result<Vec<DriveFile>, String> {
+    validate_google_id(parent_id)?;
     if let Some(files) = state
+        .session_for(auth_generation)?
         .drive_cache
-        .lock()
-        .map_err(|_| "Failed to read Drive cache.")?
         .get(parent_id)
         .cloned()
     {
         return Ok(files);
     }
-
-    let files = list_children(client, token, parent_id).await?;
+    let files = list_children(client, token, parent_id, state, auth_generation).await?;
     state
+        .session_for(auth_generation)?
         .drive_cache
-        .lock()
-        .map_err(|_| "Failed to update Drive cache.")?
         .insert(parent_id.to_string(), files.clone());
     Ok(files)
 }
@@ -634,6 +714,7 @@ async fn document_has_images(
     token: &str,
     document_id: &str,
 ) -> Result<bool, String> {
+    validate_google_id(document_id)?;
     let fields =
         utf8_percent_encode("inlineObjects,positionedObjects", NON_ALPHANUMERIC).to_string();
     let url = format!("https://docs.googleapis.com/v1/documents/{document_id}?fields={fields}");
@@ -645,7 +726,7 @@ async fn document_has_images(
             .bearer_auth(token)
             .send()
             .await
-            .map_err(|error| format!("Docs request failed: {error}"))?;
+            .map_err(|error| format!("Docs request failed: {}", error.without_url()))?;
 
         let status = response.status();
         if status.is_success() {
@@ -689,12 +770,7 @@ fn object_map_contains_image(value: Option<&Value>) -> bool {
 
 async fn format_google_error(context: &str, response: reqwest::Response) -> String {
     let status = response.status();
-    let body = response.text().await.unwrap_or_default();
-    if body.trim().is_empty() {
-        format!("{context} failed with status {status}.")
-    } else {
-        format!("{context} failed with status {status}: {body}")
-    }
+    format!("{context} failed with status {status}.")
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -712,4 +788,72 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    #[test]
+    fn session_changes_reject_late_cache_writes_even_when_token_is_reused() {
+        let state = AppState::default();
+        let first = state.replace_token(Some("same-token".into())).unwrap();
+        {
+            let mut session = state.session_for(first.generation).unwrap();
+            session.drive_cache.insert("root".into(), Vec::new());
+            session.scan_cache.insert(
+                "doc".into(),
+                CachedDocScan {
+                    modified_time: None,
+                    has_images: true,
+                },
+            );
+        }
+        state.replace_token(None).unwrap();
+        assert!(read_token(&state).is_err());
+        let next = state.replace_token(Some("same-token".into())).unwrap();
+        assert!(state.session_for(first.generation).is_err());
+        let session = state.session_for(next.generation).unwrap();
+        assert!(session.drive_cache.is_empty());
+        assert!(session.scan_cache.is_empty());
+    }
+
+    #[test]
+    fn replacing_token_invalidates_scans() {
+        let state = AppState::default();
+        state.replace_token(Some("first".into())).unwrap();
+        let scan = state.scan_generation.load(Ordering::SeqCst);
+        state.replace_token(Some("second".into())).unwrap();
+        assert_ne!(scan, state.scan_generation.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn ids_reject_query_injection_and_url_path_delimiters() {
+        for id in [
+            "",
+            "' or trashed = true or '",
+            "../other",
+            "doc?fields=body",
+            "doc#fragment",
+            "doc\\path",
+            "doc%2fpath",
+        ] {
+            assert!(validate_google_id(id).is_err(), "accepted {id:?}");
+        }
+        assert!(validate_google_id(&"a".repeat(257)).is_err());
+        for id in ["root", "1_aB-cD123"] {
+            assert!(validate_google_id(id).is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn api_client_rejects_plaintext_http_without_sending_credentials() {
+        let result = google_client()
+            .unwrap()
+            .get("http://127.0.0.1:1")
+            .bearer_auth("test-token")
+            .send()
+            .await;
+        assert!(result.unwrap_err().is_builder());
+    }
 }

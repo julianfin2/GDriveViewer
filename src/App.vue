@@ -25,6 +25,7 @@ import {
   Sparkles,
 } from "@lucide/vue";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { googleDriveUrl } from "./security";
 
 const DEFAULT_COLUMN_WIDTH = 260;
 const MIN_COLUMN_WIDTH = 180;
@@ -65,6 +66,7 @@ interface ScanResult {
 }
 
 interface ScanProgress {
+  authGeneration: number;
   folderId: string;
   totalFiles: number;
   totalDocs: number;
@@ -87,9 +89,13 @@ interface ColumnState {
 }
 
 const connected = ref(false);
+const connecting = ref(false);
+let sessionGeneration = 0;
+let authGeneration = 0;
 const accessToken = ref("");
 const loading = ref(false);
 const scanning = ref(false);
+const scanCancelled = ref(false);
 const error = ref("");
 const currentParentId = ref("root");
 const pathStack = ref([{ id: "root", name: "我的云端硬盘" }]);
@@ -167,18 +173,19 @@ const currentFolderName = computed(
 );
 
 onMounted(async () => {
+  const generation = sessionGeneration;
   const unlistenProgress = await listen<ScanProgress>("scan-progress", (event) => {
+    if (!connected.value || !scanning.value || event.payload.authGeneration !== authGeneration) return;
     scanProgress.value = event.payload;
-    if (event.payload.cancelled) {
-      scanning.value = false;
-    }
   });
   window.addEventListener("beforeunload", () => {
     unlistenProgress();
   });
 
   try {
-    const state = await invoke<{ connected: boolean }>("get_auth_state");
+    const state = await invoke<{ connected: boolean; generation: number }>("get_auth_state");
+    if (generation !== sessionGeneration) return;
+    authGeneration = state.generation;
     connected.value = state.connected;
     if (state.connected) {
       await loadFolder("root", "我的云端硬盘", true);
@@ -188,33 +195,61 @@ onMounted(async () => {
   }
 });
 
+function clearSessionView() {
+  files.value = [];
+  columns.value = [];
+  selectedId.value = undefined;
+  selectedInfo.value = null;
+  folderCache.value.clear();
+  scanResult.value = null;
+  scanProgress.value = null;
+  scanning.value = false;
+  loading.value = false;
+  currentParentId.value = "root";
+  pathStack.value = [{ id: "root", name: "我的云端硬盘" }];
+}
+
 async function connect() {
+  if (connecting.value) return;
+  const generation = ++sessionGeneration;
+  connecting.value = true;
   error.value = "";
+  clearSessionView();
   try {
-    const state = await invoke<{ connected: boolean }>("set_access_token", {
+    const state = await invoke<{ connected: boolean; generation: number }>("set_access_token", {
       token: accessToken.value,
     });
+    if (generation !== sessionGeneration) return;
+    authGeneration = state.generation;
     connected.value = state.connected;
     accessToken.value = "";
     await loadFolder("root", "我的云端硬盘", true);
   } catch (reason) {
-    setError(reason);
+    if (generation === sessionGeneration) setError(reason);
+  } finally {
+    if (generation === sessionGeneration) connecting.value = false;
   }
 }
 
 async function disconnect() {
+  if (connecting.value) return;
+  connecting.value = true;
+  ++sessionGeneration;
   error.value = "";
-  await invoke("clear_access_token");
-  connected.value = false;
-  files.value = [];
-  columns.value = [];
-  selectedInfo.value = null;
-  folderCache.value.clear();
-  scanResult.value = null;
-  pathStack.value = [{ id: "root", name: "我的云端硬盘" }];
+  try {
+    await invoke("clear_access_token");
+    connected.value = false;
+    accessToken.value = "";
+    clearSessionView();
+  } catch (reason) {
+    setError(reason);
+  } finally {
+    connecting.value = false;
+  }
 }
 
 async function loadFolder(id: string, name: string, resetPath = false, force = false) {
+  const generation = sessionGeneration;
   error.value = "";
   const cached = folderCache.value.get(id);
 
@@ -228,12 +263,13 @@ async function loadFolder(id: string, name: string, resetPath = false, force = f
     const response = await invoke<DriveListResponse>("list_drive_files", {
       parentId: id,
     });
+    if (generation !== sessionGeneration) return;
     folderCache.value.set(response.parentId, response.files);
     commitFolder(response.parentId, name, applyScanMarks(response.files), resetPath);
   } catch (reason) {
-    setError(reason);
+    if (generation === sessionGeneration) setError(reason);
   } finally {
-    loading.value = false;
+    if (generation === sessionGeneration) loading.value = false;
   }
 }
 
@@ -267,6 +303,7 @@ function commitFolder(id: string, name: string, nextFiles: DriveFile[], resetPat
 }
 
 async function openColumnFile(columnIndex: number, file: DriveFile) {
+  const generation = sessionGeneration;
   selectedId.value = file.id;
   selectedInfo.value = file;
   const previousReserve = currentColumnReserve();
@@ -304,6 +341,7 @@ async function openColumnFile(columnIndex: number, file: DriveFile) {
     const response = await invoke<DriveListResponse>("list_drive_files", {
       parentId: file.id,
     });
+    if (generation !== sessionGeneration) return;
     folderCache.value.set(response.parentId, response.files);
     columns.value = [
       ...nextColumns,
@@ -316,15 +354,17 @@ async function openColumnFile(columnIndex: number, file: DriveFile) {
     preserveColumnWidthReserve(columns.value, previousReserve);
     await scrollColumnsToEnd();
   } catch (reason) {
-    setError(reason);
+    if (generation === sessionGeneration) setError(reason);
   } finally {
-    loading.value = false;
+    if (generation === sessionGeneration) loading.value = false;
   }
 }
 
 async function scanCurrentFolder() {
+  const generation = sessionGeneration;
   scanning.value = true;
   scanProgress.value = null;
+  scanCancelled.value = false;
   error.value = "";
   try {
     const result = await invoke<ScanResult>("scan_docs_for_images", {
@@ -332,8 +372,10 @@ async function scanCurrentFolder() {
       recursive: scanRecursive.value,
       force: forceRescan.value,
     });
+    if (generation !== sessionGeneration) return;
     scanResult.value = result;
     scanProgress.value = {
+      authGeneration,
       folderId: result.folderId,
       totalFiles: result.totalFiles,
       totalDocs: result.totalDocs,
@@ -343,8 +385,8 @@ async function scanCurrentFolder() {
       cacheHits: result.cacheHits,
       failedDocs: result.failedDocs,
       docsWithImages: result.docsWithImages,
-      cancelled: false,
-      message: "扫描完成",
+      cancelled: scanCancelled.value,
+      message: scanCancelled.value ? "扫描已取消" : "扫描完成",
     };
     files.value = applyScanMarks(files.value);
     folderCache.value = new Map(
@@ -358,15 +400,15 @@ async function scanCurrentFolder() {
       files: applyScanMarks(column.files),
     }));
   } catch (reason) {
-    setError(reason);
+    if (generation === sessionGeneration) setError(reason);
   } finally {
-    scanning.value = false;
+    if (generation === sessionGeneration) scanning.value = false;
   }
 }
 
 async function cancelCurrentScan() {
+  scanCancelled.value = true;
   await invoke("cancel_scan");
-  scanning.value = false;
   if (scanProgress.value) {
     scanProgress.value = {
       ...scanProgress.value,
@@ -439,7 +481,9 @@ function visibleColumnFiles(column: ColumnState) {
   });
 }
 
-function folderMayContainImageDocs(folderId: string): boolean {
+function folderMayContainImageDocs(folderId: string, visited = new Set<string>()): boolean {
+  if (visited.has(folderId)) return false;
+  visited.add(folderId);
   if (scanResult.value?.matchingFolderIds.includes(folderId)) {
     return true;
   }
@@ -451,7 +495,7 @@ function folderMayContainImageDocs(folderId: string): boolean {
 
   return cachedFiles.some((file) => {
     if (file.isFolder) {
-      return folderMayContainImageDocs(file.id);
+      return folderMayContainImageDocs(file.id, visited);
     }
     return file.isGoogleDoc && file.hasImages === true;
   });
@@ -468,7 +512,11 @@ async function openSelectedLink() {
   if (!selectedInfo.value?.webViewLink) {
     return;
   }
-  await openUrl(selectedInfo.value.webViewLink);
+  try {
+    await openUrl(googleDriveUrl(selectedInfo.value.webViewLink));
+  } catch (reason) {
+    setError(reason);
+  }
 }
 
 function formatDate(value?: string) {
@@ -634,18 +682,23 @@ async function scrollPathbarToEnd() {
           <KeyRound :size="15" />
           <span>Google 访问令牌</span>
         </label>
-        <textarea
+        <input
           id="token"
+          class="token-input"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="8192"
           v-model="accessToken"
-          :disabled="connected"
+          :disabled="connected || connecting"
           placeholder="粘贴 access token"
         />
         <div class="button-row">
-          <button v-if="!connected" type="button" @click="connect">
+          <button v-if="!connected" type="button" :disabled="connecting" @click="connect">
             <LogIn :size="16" />
             <span>连接</span>
           </button>
-          <button v-else type="button" class="secondary" @click="disconnect">
+          <button v-else type="button" class="secondary" :disabled="connecting" @click="disconnect">
             <LogOut :size="16" />
             <span>断开连接</span>
           </button>
@@ -1024,7 +1077,7 @@ button svg,
   gap: 7px;
 }
 
-textarea {
+.token-input {
   width: 100%;
   min-height: 96px;
   resize: vertical;

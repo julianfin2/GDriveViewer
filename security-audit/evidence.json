@@ -1,0 +1,1437 @@
+{
+  "osv_before": {
+    "queries": 502,
+    "matches": [
+      {
+        "query": {
+          "package": {
+            "name": "anyhow",
+            "ecosystem": "crates.io"
+          },
+          "version": "1.0.102"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2026-0190",
+            "modified": "2026-06-29T14:15:03.650725Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "event-listener",
+            "ecosystem": "crates.io"
+          },
+          "version": "5.4.1"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2026-0221",
+            "modified": "2026-07-31T12:15:04.629484Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "glib",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.18.5"
+        },
+        "vulns": [
+          {
+            "id": "GHSA-wrw7-89jp-8q8g",
+            "modified": "2025-10-28T06:29:26.473225Z"
+          },
+          {
+            "id": "RUSTSEC-2024-0429",
+            "modified": "2025-10-28T06:29:26.473225Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "proc-macro-error",
+            "ecosystem": "crates.io"
+          },
+          "version": "1.0.4"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2024-0370",
+            "modified": "2026-06-07T20:00:03.923932Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "quick-xml",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.39.4"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2026-0194",
+            "modified": "2026-07-02T08:00:03.849273Z"
+          },
+          {
+            "id": "RUSTSEC-2026-0195",
+            "modified": "2026-07-02T09:00:04.037478Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "quinn-proto",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.11.14"
+        },
+        "vulns": [
+          {
+            "id": "GHSA-4w2j-m93h-cj5j",
+            "modified": "2026-09-10T03:51:10.288925Z"
+          },
+          {
+            "id": "RUSTSEC-2026-0185",
+            "modified": "2026-07-25T06:55:52Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "rustls",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.23.40"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2026-0285",
+            "modified": "2026-09-14T16:15:03.240735Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "serde_with",
+            "ecosystem": "crates.io"
+          },
+          "version": "3.20.0"
+        },
+        "vulns": [
+          {
+            "id": "GHSA-7gcf-g7xr-8hxj",
+            "modified": "2026-09-10T03:51:10.897685Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "unic-char-property",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.9.0"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2025-0081",
+            "modified": "2025-10-21T11:12:59Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "unic-char-range",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.9.0"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2025-0075",
+            "modified": "2025-10-22T14:41:04Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "unic-common",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.9.0"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2025-0080",
+            "modified": "2025-10-21T11:12:59Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "unic-ucd-ident",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.9.0"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2025-0100",
+            "modified": "2025-10-21T11:12:59Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "unic-ucd-version",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.9.0"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2025-0098",
+            "modified": "2025-10-21T11:12:59Z"
+          }
+        ]
+      }
+    ],
+    "details": [
+      {
+        "id": "GHSA-4w2j-m93h-cj5j",
+        "summary": "Quinn: Remote memory exhaustion in quinn-proto from unbounded out-of-order stream reassembly",
+        "details": "## Summary\n\nThe `Assembler` component that assembles unordered stream fragments into consecutive chunks of the stream incurs some overhead for non-contiguous fragments. Readers that read from a `RecvStream` in order (through an `AsyncRead` impl for example) will be sensitive to peers that send fragments while leaving out early parts of the stream, and in particular, fragments with many gaps (because these cannot be defragmented). In such a scenario, the receiving connection suffers from high buffer overhead, enabling memory exhaustion.",
+        "aliases": [
+          "CVE-2026-25800",
+          "RUSTSEC-2026-0185"
+        ],
+        "modified": "2026-09-10T03:51:10.288925502Z",
+        "published": "2026-07-24T14:07:54Z",
+        "database_specific": {
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-07-24T14:07:54Z",
+          "nvd_published_at": null,
+          "cwe_ids": [
+            "CWE-770"
+          ],
+          "severity": "HIGH"
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/quinn-rs/quinn/security/advisories/GHSA-4w2j-m93h-cj5j"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/quinn-rs/quinn/pull/2694"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/quinn-rs/quinn/commit/fed0321a9a672819662caab37f5662f1ad91308e"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/quinn-rs/quinn"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/quinn-rs/quinn/releases/tag/quinn-proto-0.11.15"
+          },
+          {
+            "type": "WEB",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0185.html"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "quinn-proto",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/quinn-proto"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.1.0"
+                  },
+                  {
+                    "fixed": "0.11.15"
+                  }
+                ]
+              }
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-4w2j-m93h-cj5j/GHSA-4w2j-m93h-cj5j.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          }
+        ]
+      },
+      {
+        "id": "GHSA-7gcf-g7xr-8hxj",
+        "summary": "serde_with: KeyValueMap serialization panics on empty sequence or map entries",
+        "details": "### Summary\n\nThe public `KeyValueMap` serializer assumes that each mapped element has at least one field or item to use as the map key, but it subtracts `1` from the caller-visible length before validating that assumption. An application that serializes attacker-controlled data through `#[serde_as(as = \"KeyValueMap<_>\")]` can be crashed by an empty inner sequence or map entry.\n\n### Details\n\nThe affected public surface includes:\n\n- Serialization of `#[serde_as(as = \"KeyValueMap<_>\")]` values through `serde_json::to_string` or any other Serde serializer`\n- Public `KeyValueMap` conversions for sequence and map-backed entries`\n\nThe root cause is: The `KeyValueMap` serializer preallocating `Vec::with_capacity(len - 1)` or `Vec::with_capacity(len.unwrap_or(17) - 1)` before checking that the element actually contains the required first key field or item.\n\nThe vulnerable data/control flow is: attacker-controlled empty entry -> `serde_json::to_string` -> `KeyValueMap<TAs>::serialize_as` -> `SeqAsMapSerializer::{serialize_seq,serialize_map}` -> `Vec::with_capacity(len - 1)` or `Vec::with_capacity(len.unwrap_or(17) - 1)` -> panic\n\nRelevant source locations:\n\n- `serde_with/src/key_value_map.rs:590`\n- `serde_with/src/key_value_map.rs:599`\n- `serde_with/src/key_value_map.rs:613`\n- `serde_with/src/key_value_map.rs:632`\n- `serde_with/src/key_value_map.rs:648`\n\n### PoC\n\n```rust\n/*\n[dependencies]\nserde = {version = \"*\", features = [\"derive\"]}\nserde_with = \"*\"\nserde_json = \"*\"\n*/\n\nuse serde::Serialize;\nuse serde_with::{serde_as, KeyValueMap};\n\n#[derive(Serialize)]\n#[serde(transparent)]\nstruct Seq(Vec<String>);\n\n#[serde_as]\n#[derive(Serialize)]\n#[serde(transparent)]\nstruct KVMap {\n    #[serde_as(as = \"KeyValueMap<_>\")]\n    foo: Vec<Seq>,\n}\n\nfn main() {\n    let value = KVMap {\n        foo: vec![Seq(Vec::new())],\n    };\n    let _ = serde_json::to_string(&value).unwrap();\n}\n```\n\n### Impact\n\nA local attacker who can trigger serialization of attacker-controlled data through `KeyValueMap` can terminate the process, causing a denial of service.",
+        "modified": "2026-09-10T03:51:10.897685062Z",
+        "published": "2026-07-15T22:41:01Z",
+        "database_specific": {
+          "cwe_ids": [
+            "CWE-20"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-07-15T22:41:01Z",
+          "nvd_published_at": null
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/jonasbb/serde_with/security/advisories/GHSA-7gcf-g7xr-8hxj"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/jonasbb/serde_with/pull/966"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/jonasbb/serde_with/commit/c8a1d820ea25df01692b367058d587343e199389"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/jonasbb/serde_with"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/jonasbb/serde_with/compare/v2.2.0...v2.3.0"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/jonasbb/serde_with/releases/tag/v3.21.0"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "serde_with",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/serde_with"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "2.3.0"
+                  },
+                  {
+                    "fixed": "3.21.0"
+                  }
+                ]
+              }
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-7gcf-g7xr-8hxj/GHSA-7gcf-g7xr-8hxj.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+          }
+        ]
+      },
+      {
+        "id": "GHSA-wrw7-89jp-8q8g",
+        "summary": "Unsoundness in `Iterator` and `DoubleEndedIterator` impls for `glib::VariantStrIter`",
+        "details": "The `VariantStrIter::impl_get` function (called internally by implementations of the `Iterator` and `DoubleEndedIterator` traits for this type) was unsound, resulting in undefined behaviour.\n\nAn immutable reference `&p` to a `*mut libc::c_char` pointer initialized to `NULL` was passed as an argument to a C function that that mutates the pointer behind `&p` in-place (i.e. as an out-argument), which was unsound. After changes in recent versions of the Rust compiler, these unsound writes through `&p` now seem to be completely disregarded when building the `glib` crate with optimizations.\n\nThis subsequently caused all calls of `VariantStrIter::impl_get` to violate the safety requirements of the `std::ffi::CStr::from_ptr` function - which requires its argument to be a valid pointer to a C-style string - resulting in crashes due to `NULL` pointer dereferences.\n\nThis was fixed by passing the out-argument pointer explitly as `&mut p` instead of `&p`.\n\nThis issue has been present since this code was initially added in `glib` v0.15.0. The mismatch in mutability was likely missed (and not raised as an error by the compiler) because the C function wrapped by `VariantStrIter::impl_get` is variadic (`glib_sys::g_variant_get_child`), and the pointer in question is one of the variadic arguments.\n\n",
+        "aliases": [
+          "RUSTSEC-2024-0429"
+        ],
+        "modified": "2025-10-28T06:29:26.473225Z",
+        "published": "2024-12-23T20:19:24Z",
+        "database_specific": {
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2024-12-23T20:19:24Z",
+          "nvd_published_at": null,
+          "cwe_ids": []
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/gtk-rs/gtk-rs-core/pull/1343"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/gtk-rs/gtk-rs-core"
+          },
+          {
+            "type": "WEB",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2024-0429.html"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "glib",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/glib"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.15.0"
+                  },
+                  {
+                    "fixed": "0.20.0"
+                  }
+                ]
+              }
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2024/12/GHSA-wrw7-89jp-8q8g/GHSA-wrw7-89jp-8q8g.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      },
+      {
+        "id": "RUSTSEC-2024-0370",
+        "summary": "proc-macro-error is unmaintained",
+        "details": "proc-macro-error's maintainer seems to be unreachable, with no commits for 2 years, no releases pushed for 4 years, and no activity on the GitLab repo or response to email.\n\nproc-macro-error also depends on `syn 1.x`, which may be bringing duplicate dependencies into dependant build trees.\n\n## Possible Alternative(s)\n\n- [manyhow](https://crates.io/crates/manyhow)\n- [proc-macro2-diagnostics](https://github.com/SergioBenitez/proc-macro2-diagnostics)",
+        "modified": "2026-06-07T20:00:03.923932350Z",
+        "published": "2024-09-01T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/proc-macro-error"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2024-0370.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://gitlab.com/CreepySkeleton/proc-macro-error/-/issues/20"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "proc-macro-error",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/proc-macro-error"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "os": [],
+                "functions": [],
+                "arch": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "cvss": null,
+              "informational": "unmaintained",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0370.json",
+              "categories": []
+            }
+          }
+        ],
+        "schema_version": "1.7.5"
+      },
+      {
+        "id": "RUSTSEC-2024-0429",
+        "summary": "Unsoundness in `Iterator` and `DoubleEndedIterator` impls for `glib::VariantStrIter`",
+        "details": "The `VariantStrIter::impl_get` function (called internally by implementations of the `Iterator` and `DoubleEndedIterator` traits for this type) was unsound, resulting in undefined behaviour.\n\nAn immutable reference `&p` to a `*mut libc::c_char` pointer initialized to `NULL` was passed as an argument to a C function that that mutates the pointer behind `&p` in-place (i.e. as an out-argument), which was unsound. After changes in recent versions of the Rust compiler, these unsound writes through `&p` now seem to be completely disregarded when building the `glib` crate with optimizations.\n\nThis subsequently caused all calls of `VariantStrIter::impl_get` to violate the safety requirements of the `std::ffi::CStr::from_ptr` function - which requires its argument to be a valid pointer to a C-style string - resulting in crashes due to `NULL` pointer dereferences.\n\nThis was fixed by passing the out-argument pointer explitly as `&mut p` instead of `&p`.\n\nThis issue has been present since this code was initially added in `glib` v0.15.0. The mismatch in mutability was likely missed (and not raised as an error by the compiler) because the C function wrapped by `VariantStrIter::impl_get` is variadic (`glib_sys::g_variant_get_child`), and the pointer in question is one of the variadic arguments.",
+        "aliases": [
+          "GHSA-wrw7-89jp-8q8g"
+        ],
+        "modified": "2025-10-28T06:29:26.473225Z",
+        "published": "2024-03-30T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/glib"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2024-0429.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/gtk-rs/gtk-rs-core/pull/1343"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "glib",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/glib"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.15.0"
+                  },
+                  {
+                    "fixed": "0.20.0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "functions": [
+                  "glib::VariantStrIter::last",
+                  "glib::VariantStrIter::next",
+                  "glib::VariantStrIter::next_back",
+                  "glib::VariantStrIter::nth",
+                  "glib::VariantStrIter::nth_back"
+                ],
+                "os": [],
+                "arch": []
+              }
+            },
+            "database_specific": {
+              "informational": "unsound",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0429.json",
+              "categories": [],
+              "cvss": null
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2025-0075",
+        "summary": "`unic-char-range` is unmaintained",
+        "details": "All Unicode crates that are part of https://github.com/open-i18n/rust-unic are unmaintained.\n\n## Recommended alternatives\n\n- Since version [1.45.0](https://releases.rs/docs/1.45.0/#libraries) Rust [supports](https://github.com/rust-lang/rust/pull/72413/) using `char` with `ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo}` to iterate over a range of codepoints.",
+        "modified": "2025-10-22T14:41:04Z",
+        "published": "2025-10-18T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/unic-char-range"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2025-0075.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/rustsec/advisory-db/issues/2414"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "unic-char-range",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/unic-char-range"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "arch": [],
+                "functions": [],
+                "os": []
+              }
+            },
+            "database_specific": {
+              "categories": [],
+              "cvss": null,
+              "informational": "unmaintained",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2025-0075.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2025-0080",
+        "summary": "`unic-common` is unmaintained",
+        "details": "All Unicode crates that are part of https://github.com/open-i18n/rust-unic are unmaintained.",
+        "modified": "2025-10-21T11:12:59Z",
+        "published": "2025-10-18T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/unic-common"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2025-0080.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/rustsec/advisory-db/issues/2414"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "unic-common",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/unic-common"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "arch": [],
+                "functions": [],
+                "os": []
+              }
+            },
+            "database_specific": {
+              "categories": [],
+              "cvss": null,
+              "informational": "unmaintained",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2025-0080.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2025-0081",
+        "summary": "`unic-char-property` is unmaintained",
+        "details": "All Unicode crates that are part of https://github.com/open-i18n/rust-unic are unmaintained.\n\n## Recommended alternatives\n\n- [`icu_properties`](https://crates.io/crates/icu_properties)",
+        "modified": "2025-10-21T11:12:59Z",
+        "published": "2025-10-18T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/unic-char-property"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2025-0081.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/rustsec/advisory-db/issues/2414"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "unic-char-property",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/unic-char-property"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "functions": [],
+                "os": [],
+                "arch": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2025-0081.json",
+              "categories": [],
+              "cvss": null,
+              "informational": "unmaintained"
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2025-0098",
+        "summary": "`unic-ucd-version` is unmaintained",
+        "details": "All Unicode crates that are part of https://github.com/open-i18n/rust-unic are unmaintained.",
+        "modified": "2025-10-21T11:12:59Z",
+        "published": "2025-10-18T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/unic-ucd-version"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2025-0098.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/rustsec/advisory-db/issues/2414"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "unic-ucd-version",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/unic-ucd-version"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "arch": [],
+                "functions": [],
+                "os": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "categories": [],
+              "cvss": null,
+              "informational": "unmaintained",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2025-0098.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2025-0100",
+        "summary": "`unic-ucd-ident` is unmaintained",
+        "details": "All Unicode crates that are part of https://github.com/open-i18n/rust-unic are unmaintained.\n\n## Recommended alternatives\n\n- [`icu_properties`](https://crates.io/crates/icu_properties)\n- [`unicode-ident`](https://crates.io/crates/unicode-ident)",
+        "modified": "2025-10-21T11:12:59Z",
+        "published": "2025-10-18T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/unic-ucd-ident"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2025-0100.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/rustsec/advisory-db/issues/2414"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "unic-ucd-ident",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/unic-ucd-ident"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "arch": [],
+                "functions": [],
+                "os": []
+              }
+            },
+            "database_specific": {
+              "categories": [],
+              "cvss": null,
+              "informational": "unmaintained",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2025-0100.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.3"
+      },
+      {
+        "id": "RUSTSEC-2026-0185",
+        "summary": " Remote memory exhaustion in quinn-proto from unbounded out-of-order stream reassembly",
+        "details": "The `Assembler` component that assembles unordered stream fragments into consecutive chunks of the\nstream incurs some overhead for non-contiguous fragments. Readers that read from a RecvStream in\norder (through an `AsyncRead` impl for example) will be sensitive to peers that send fragments\nwhile leaving out early parts of the stream, and in particular, fragments with many gaps (because\nthese cannot be defragmented). In such a scenario, the receiving connection suffers from high\nbuffer overhead, enabling memory exhaustion.",
+        "aliases": [
+          "CVE-2026-25800",
+          "GHSA-4w2j-m93h-cj5j"
+        ],
+        "modified": "2026-07-25T06:55:52Z",
+        "published": "2026-06-22T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/quinn-proto"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0185.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/quinn-rs/quinn/pull/2694"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "quinn-proto",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/quinn-proto"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  },
+                  {
+                    "fixed": "0.11.15"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "arch": [],
+                "os": [],
+                "functions": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "categories": [
+                "denial-of-service"
+              ],
+              "cvss": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "informational": null,
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0185.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          }
+        ]
+      },
+      {
+        "id": "RUSTSEC-2026-0190",
+        "summary": "Unsoundness in `Error::downcast_mut()`",
+        "details": "Affected versions of this crate violate borrow rules, resulting in undefined behavior, when the user adds context to an error via `Error::context` and then later calls `Error::downcast_mut` on the returned `Error`.\n\nThe flaw was corrected in commit `6e8c000` by revising how the mutable reference is constructed, avoiding inclusion of a shared reference in the resulting borrow chain.\n\n## Example\n\n```rust\nuse anyhow::Error;\nuse std::fmt;\n\n#[derive(Debug)]\nstruct ErrorContext(&'static str);\n\nimpl fmt::Display for ErrorContext {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        fmt::Display::fmt(&self.0, f)\n    }\n}\n\nfn main() {\n    let mut error = Error::msg(\"inner error\").context(ErrorContext(\"old context\"));\n    let context: &mut ErrorContext = error.downcast_mut().unwrap();\n    context.0 = \"new context\";\n    println!(\"{:?}\", error);\n}\n```\n\n## Miri output\n\n```\nerror: Undefined Behavior: trying to retag from <1538> for Unique permission at alloc602[0x38], but that tag only grants SharedReadOnly permission for this location\n   --> src/ptr.rs:170:18\n    |\n170 |         unsafe { &mut *self.ptr.as_ptr() }\n    |                  ^^^^^^^^^^^^^^^^^^^^^^^ this error occurs as part of retag at alloc602[0x38..0x48]\n    |\n    = help: this indicates a potential bug in the program: it performed an invalid operation, but the Stacked Borrows rules it violated are still experimental\n    = help: see https://github.com/rust-lang/unsafe-code-guidelines/blob/master/wip/stacked-borrows.md for further information\nhelp: <1538> was created by a SharedReadOnly retag at offsets [0x38..0x48]\n   --> src/ptr.rs:89:18\n    |\n 89 |             ptr: NonNull::from(ptr),\n    |                  ^^^^^^^^^^^^^^^^^^\n    = note: stack backtrace:\n            0: anyhow::ptr::Mut::<'_, ErrorContext>::deref_mut\n                at src/ptr.rs:170:18: 170:41\n            1: anyhow::error::<impl anyhow::Error>::downcast_mut::<ErrorContext>\n                at src/error.rs:560:18: 560:46\n            2: main\n                at examples/downcast_mut.rs:15:38: 15:58\n```",
+        "modified": "2026-06-29T14:15:03.650725453Z",
+        "published": "2026-06-25T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/anyhow"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0190.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/dtolnay/anyhow/issues/451"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "anyhow",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/anyhow"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  },
+                  {
+                    "fixed": "1.0.103"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "os": [],
+                "functions": [
+                  "anyhow::Error::downcast_mut"
+                ],
+                "arch": []
+              }
+            },
+            "database_specific": {
+              "categories": [
+                "memory-corruption"
+              ],
+              "cvss": null,
+              "informational": "unsound",
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0190.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.5"
+      },
+      {
+        "id": "RUSTSEC-2026-0194",
+        "summary": "Quadratic run time when checking a start tag for duplicate attribute names",
+        "details": "`BytesStart::attributes()` returns an `Attributes` iterator which, by default\n(`with_checks(true)`), rejects a start tag that repeats an attribute name. For\neach attribute yielded, the iterator compared the new name against every name\nseen so far in the same tag using a linear scan, so a start tag with `N`\ndistinct attribute names cost `O(N²)` byte comparisons. There was no bound on\n`N` other than the size of the buffered start tag.\n\n## Impact\n\nAny code that parses untrusted XML and iterates a start tag's attributes with\nthe default duplicate check enabled can be made to spend CPU time quadratic in\nthe number of attributes on a single tag. Because the check is pure computation\nwith no `.await`/I/O, an I/O-based timeout on the consumer (for example a read\nor request timeout) cannot interrupt it while it runs.\n\nMeasured cost of a single start tag, release build:\n\n| Attributes on one tag | Time |\n|---|---|\n| 80,000  | ~6 s   |\n| 800,000 | ~10 min |\n\nThe cost grows with the square of the attribute count, so a start tag of a few\ntens of megabytes can stall a parsing thread for hours. No memory is exhausted\nand the parser does not crash; the effect is CPU exhaustion on the thread doing\nthe parsing: a single crafted start tag can pin a CPU core for minutes to hours,\ndenying service to that worker. A deployment that places a wall-clock bound on\nparsing, or confines it to a non-critical thread, may consider the availability\nimpact lower.\n\n## Affected code paths\n\n* `BytesStart::attributes()` / `Attributes` iterated with checks enabled (the\n  default), and `BytesStart::try_get_attribute`.\n* `NsReader`, which resolves namespaces by iterating a tag's attributes and so\n  reaches the same check internally.\n\nConsumers that iterate attributes with `.attributes().with_checks(false)` and do\nnot use `NsReader` are not affected.\n\nThis was reported as reachable by a remote, unauthenticated attacker in a\nreal-world RPKI relying party (NLnet Labs Routinator) via a crafted RRDP\n`snapshot.xml`.\n\n## Remediation\n\nUpgrade to `quick-xml >= 0.41.0`, where the duplicate check keeps the linear\nscan for start tags with a small number of attributes and switches to an `O(1)`\nhash pre-filter above a threshold, making the whole tag `O(N)`. The reported\n`AttrError::Duplicated` positions are unchanged.\n\nIf upgrading is not possible and duplicate-name detection is not required,\ndisable it with `.attributes().with_checks(false)` (this does not help\n`NsReader` consumers, which have no equivalent opt-out before 0.41.0).",
+        "modified": "2026-07-02T08:00:03.849273679Z",
+        "published": "2026-06-29T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/quick-xml"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0194.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/tafia/quick-xml/issues/969"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/tafia/quick-xml/pull/971"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/tafia/quick-xml/commit/07f3db8343cf152f5bc3483ef5b3164582489bea"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "quick-xml",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/quick-xml"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  },
+                  {
+                    "fixed": "0.41.0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "arch": [],
+                "os": [],
+                "functions": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "categories": [
+                "denial-of-service"
+              ],
+              "cvss": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "informational": null,
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0194.json"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          }
+        ]
+      },
+      {
+        "id": "RUSTSEC-2026-0195",
+        "summary": "Unbounded namespace-declaration allocation in `NsReader` enables memory-exhaustion denial of service",
+        "details": "`NsReader` resolves namespaces by calling `NamespaceResolver::push` for every\n`Start`/`Empty` event *before* the event is returned to the caller. `push`\niterated all `xmlns` / `xmlns:*` attributes on the start tag and, for each one,\nappended the prefix bytes to an internal buffer and pushed a `NamespaceBinding`\n(32 bytes on 64-bit) to an internal `Vec`, with no upper bound on the number of\ndeclarations.\n\n## Impact\n\nA start tag with `N` namespace declarations drove roughly `3×` the tag's byte\nsize in `NamespaceResolver` heap, allocated *inside* `quick-xml` before the\n`NsReader` consumer ever received the event and could inspect or reject it. A\nconsumer that bounds its *input* size therefore still cannot bound this\nallocation: an `M`-byte start tag yields on the order of `3 × M` bytes of\nresolver heap the caller never sees.\n\nOn untrusted XML this lets a remote, unauthenticated attacker force large heap\nallocations with a single start tag. With several `NsReader`s running\nconcurrently on independent inputs (a common server pattern), the allocations\nstack and can exhaust process memory, causing the operating system to kill the\nprocess (OOM). This was confirmed against a real-world RPKI relying party (NLnet\nLabs Routinator), where concurrent RRDP validation workers parsing a crafted\n`snapshot.xml` exceeded the memory limit and the process was OOM-killed.\n\n## Affected code paths\n\nConsumers using `NsReader` (which always calls `NamespaceResolver::push` before\nyielding `Start`/`Empty`), or calling `NamespaceResolver::push` directly. A plain\n`Reader` that does not perform namespace resolution is not affected.\n\n## Remediation\n\nUpgrade to `quick-xml >= 0.41.0`. `NamespaceResolver::push` now rejects a start\ntag that declares more than `DEFAULT_MAX_DECLARATIONS_PER_ELEMENT` (256)\nnamespace bindings, returning the new `NamespaceError::TooManyDeclarations`\ninstead of allocating without limit. The limit is configurable via\n`NamespaceResolver::set_max_declarations_per_element` (use `usize::MAX` to\nrestore the previous unbounded behavior), and `NsReader::resolver_mut()` is\nprovided to reach it.\n\nThere is no clean workaround for `NsReader` consumers before 0.41.0, as the\nallocation happens inside the reader with no configuration knob to cap it.",
+        "modified": "2026-07-02T09:00:04.037478193Z",
+        "published": "2026-06-29T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/quick-xml"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0195.html"
+          },
+          {
+            "type": "REPORT",
+            "url": "https://github.com/tafia/quick-xml/issues/970"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/tafia/quick-xml/commit/7ca25266e94987210daa864889ab15c9332c8a2a"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "quick-xml",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/quick-xml"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.0.0-0"
+                  },
+                  {
+                    "fixed": "0.41.0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affects": {
+                "arch": [],
+                "os": [],
+                "functions": []
+              },
+              "affected_functions": null
+            },
+            "database_specific": {
+              "informational": null,
+              "categories": [
+                "denial-of-service"
+              ],
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0195.json",
+              "cvss": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          }
+        ]
+      },
+      {
+        "id": "RUSTSEC-2026-0221",
+        "summary": "`event-listener` allows `!Send` tags to cross thread boundaries via `StackSlot`",
+        "details": "Affected versions of `event-listener` unconditionally implement `Send` and\n`Sync` for `StackSlot<'_, T>`, the stack-allocated listener type created\nby the `listener!` macro.\n\nThis allows a `!Send` tag type set via `Event::with_tag` to be moved to\nanother thread and accessed via `StackSlot::wait`, causing a data race in safe\ncode.",
+        "modified": "2026-07-31T12:15:04.629484145Z",
+        "published": "2026-07-13T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/event-listener"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0221.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/smol-rs/event-listener/pull/163"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "event-listener",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/event-listener"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "5.1.0"
+                  },
+                  {
+                    "fixed": "5.4.2"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "os": [],
+                "functions": [],
+                "arch": []
+              }
+            },
+            "database_specific": {
+              "categories": [
+                "memory-corruption",
+                "thread-safety"
+              ],
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0221.json",
+              "cvss": null,
+              "informational": "unsound"
+            }
+          }
+        ],
+        "schema_version": "1.7.5"
+      },
+      {
+        "id": "RUSTSEC-2026-0285",
+        "summary": "TLS 1.3 handshake messages incorrectly accepted across encryption level boundaries",
+        "details": "Rustls accepted TLS 1.3 handshake messages sent at the wrong encryption level\nwhen they followed a key-changing message in the same record. For example,\na plaintext `EncryptedExtensions` message packed into the same record as the\n`ServerHello` was accepted.\n\nRFC 8446 section 5.1 requires that handshake messages do not span key changes,\nand that implementations terminate the connection with an \"unexpected_message\"\nalert if they do.\n\nThe handshake transcript is still authenticated, so a network-position attacker\ncannot use this to alter or complete a handshake; the practical effect is that\na peer could send handshake messages that should be encrypted in plaintext\nwithout rustls rejecting the connection.\n\nThis is functionally the same bug as Go's\n[GO-2026-4340](https://pkg.go.dev/vuln/GO-2026-4340) (CVE-2025-61730).",
+        "aliases": [
+          "GHSA-2mjx-qc3c-rqvc"
+        ],
+        "modified": "2026-09-14T16:15:03.240735517Z",
+        "published": "2026-09-14T12:00:00Z",
+        "database_specific": {
+          "license": "CC0-1.0"
+        },
+        "references": [
+          {
+            "type": "PACKAGE",
+            "url": "https://crates.io/crates/rustls"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://rustsec.org/advisories/RUSTSEC-2026-0285.html"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/rustls/rustls/security/advisories/GHSA-2mjx-qc3c-rqvc"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "rustls",
+              "ecosystem": "crates.io",
+              "purl": "pkg:cargo/rustls"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0.23.13"
+                  },
+                  {
+                    "fixed": "0.23.45"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "affected_functions": null,
+              "affects": {
+                "arch": [],
+                "os": [],
+                "functions": []
+              }
+            },
+            "database_specific": {
+              "categories": [
+                "crypto-failure"
+              ],
+              "cvss": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+              "informational": null,
+              "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0285.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+          }
+        ]
+      }
+    ]
+  },
+  "osv_after": {
+    "queries": 489,
+    "matches": [
+      {
+        "query": {
+          "package": {
+            "name": "glib",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.18.5"
+        },
+        "vulns": [
+          {
+            "id": "GHSA-wrw7-89jp-8q8g",
+            "modified": "2025-10-28T06:29:26.473225Z"
+          },
+          {
+            "id": "RUSTSEC-2024-0429",
+            "modified": "2025-10-28T06:29:26.473225Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "proc-macro-error",
+            "ecosystem": "crates.io"
+          },
+          "version": "1.0.4"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2024-0370",
+            "modified": "2026-06-07T20:00:03.923932Z"
+          }
+        ]
+      },
+      {
+        "query": {
+          "package": {
+            "name": "quick-xml",
+            "ecosystem": "crates.io"
+          },
+          "version": "0.39.4"
+        },
+        "vulns": [
+          {
+            "id": "RUSTSEC-2026-0194",
+            "modified": "2026-07-02T08:00:03.849273Z"
+          },
+          {
+            "id": "RUSTSEC-2026-0195",
+            "modified": "2026-07-02T09:00:04.037478Z"
+          }
+        ]
+      }
+    ]
+  },
+  "npm_after": {
+    "advisories": {},
+    "metadata": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "dependencies": 27,
+      "devDependencies": 82,
+      "optionalDependencies": 63,
+      "totalDependencies": 109
+    }
+  },
+  "actions": {
+    "actions/checkout@v6": "d23441a48e516b6c34aea4fa41551a30e30af803",
+    "pnpm/action-setup@v6": "0977fd99725f1db4007ccb2928dbb4e90d06cc86",
+    "actions/setup-node@v6": "249970729cb0ef3589644e2896645e5dc5ba9c38",
+    "github/codeql-action@v4": "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
+    "actions/upload-artifact@v7": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+    "actions/download-artifact@v4": "d3f86a106a0bac45b974a628896c90dbdf5c8093",
+    "actions/attest-build-provenance@v2": "e8998f949152b193b063cb0ec769d69d929409be",
+    "softprops/action-gh-release@v3": "efb35369e0ad2afab669f228072c1b0d510eae64"
+  },
+  "secret_scan": {
+    "working_files": 38,
+    "bytes": 578819,
+    "findings": [],
+    "history_commits": 25,
+    "unique_history_blobs": 66,
+    "history_findings": []
+  },
+  "npm_before_summary": {
+    "source": "Initial pnpm audit --json output (summarized)",
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 4,
+      "moderate": 2,
+      "low": 0
+    },
+    "advisories": [
+      {
+        "id": "GHSA-v6wh-96g9-6wx3",
+        "package": "vite",
+        "version": "6.4.2",
+        "severity": "moderate",
+        "fixed": "6.4.3"
+      },
+      {
+        "id": "GHSA-fx2h-pf6j-xcff",
+        "package": "vite",
+        "version": "6.4.2",
+        "severity": "high",
+        "fixed": "6.4.3"
+      },
+      {
+        "id": "GHSA-fxqj-rqcc-2cmp",
+        "package": "postcss",
+        "version": "8.5.14",
+        "severity": "moderate",
+        "fixed": "8.5.23"
+      },
+      {
+        "id": "GHSA-r28c-9q8g-f849",
+        "package": "postcss",
+        "version": "8.5.14",
+        "severity": "high",
+        "fixed": "8.5.18"
+      },
+      {
+        "id": "GHSA-28wg-ghj8-5hjv",
+        "package": "nanoid",
+        "version": "3.3.12",
+        "severity": "high",
+        "fixed": "3.3.16"
+      },
+      {
+        "id": "GHSA-2v37-7h3g-55p8",
+        "package": "nanoid",
+        "version": "3.3.12",
+        "severity": "high",
+        "fixed": "3.3.18"
+      }
+    ]
+  },
+  "final_artifact_secret_scan": {
+    "files": 7,
+    "findings": [],
+    "includes": "new source/test, final dist, release/GDriveViewer.exe; pattern-based byte scan"
+  },
+  "validation": {
+    "frontend_tests": "2 passed",
+    "rust_tests": "4 passed",
+    "clippy": "cargo clippy --locked --all-targets -- -D warnings: passed",
+    "format": "cargo fmt --check: passed",
+    "production_build": "pnpm tauri build --no-bundle: passed on Windows x64",
+    "yaml": "PyYAML parse and all uses SHA checks passed",
+    "npm_audit": "0 advisories",
+    "osv_remaining_packages": [
+      "glib",
+      "quick-xml",
+      "proc-macro-error"
+    ]
+  }
+}
